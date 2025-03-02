@@ -1,79 +1,88 @@
-// sudoku_solution_validator.c
 #include <pthread.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <stdbool.h>
 
 #define NUM_THREADS 27
 
 int sudoku[9][9] = {
-	{5, 3, 4, 6, 7, 8, 9, 1, 2},
-	{6, 7, 2, 1, 9, 5, 3, 4, 8},
-	{1, 9, 8, 3, 4, 2, 5, 6, 7},
-	{8, 5, 9, 7, 6, 1, 4, 2, 3},
-	{4, 2, 6, 8, 5, 3, 7, 9, 1},
-	{7, 1, 3, 9, 2, 4, 8, 5, 6},
-	{9, 6, 1, 5, 3, 7, 2, 8, 4},
-	{2, 8, 7, 4, 1, 9, 6, 3, 5},
-	{3, 4, 5, 2, 8, 6, 1, 7, 9}
+    {5, 3, 4, 6, 7, 8, 9, 1, 2},
+    {6, 7, 2, 1, 9, 5, 3, 4, 8},
+    {1, 9, 8, 3, 4, 2, 5, 6, 7},
+    {8, 5, 9, 7, 6, 1, 4, 2, 3},
+    {4, 2, 6, 8, 5, 3, 7, 9, 1},
+    {7, 1, 3, 9, 2, 4, 8, 5, 6},
+    {9, 6, 1, 5, 3, 7, 2, 8, 4},
+    {2, 8, 7, 4, 1, 9, 6, 3, 5},
+    {3, 4, 5, 2, 8, 6, 1, 7, 9}
 };
 
-int valid = 0;
+bool row_valid[9] = {false};
+bool col_valid[9] = {false};
+bool subgrid_valid[9] = {false};
 
-// Thread function to check all rows
 void* checkRow(void* param) {
-	int row = *(int*)param;
-	// Logic to check each row for numbers 1 through 9
-	return NULL; // Return NULL or a result structure
+    int row = *(int*)param;
+    bool numbers[10] = {false};
+    for (int i = 0; i < 9; i++) {
+        int num = sudoku[row][i];
+        if (numbers[num]) return NULL;
+        numbers[num] = true;
+    }
+    row_valid[row] = true;
+    return NULL;
 }
 
-// Thread function to check all columns
 void* checkColumn(void* param) {
-	int col = *(int*)param;
-	// Logic to check each column for numbers 1 through 9
-	return NULL;
+    int col = *(int*)param;
+    bool numbers[10] = {false};
+    for (int i = 0; i < 9; i++) {
+        int num = sudoku[i][col];
+        if (numbers[num]) return NULL;
+        numbers[num] = true;
+    }
+    col_valid[col] = true;
+    return NULL;
 }
 
-// Thread function to check all 3x3 subgrids
 void* checkSubGrid(void* param) {
-	int subgrid = *(int*)param;
-	int startRow = (subgrid / 3) * 3;
-	int startCol = (subgrid % 3) * 3;
-	// Logic to check 3x3 subgrid for numbers 1 through 9
-	return NULL;
+    int subgrid = *(int*)param;
+    int startRow = (subgrid / 3) * 3;
+    int startCol = (subgrid % 3) * 3;
+    bool numbers[10] = {false};
+    for (int i = 0; i < 3; i++) {
+        for (int j = 0; j < 3; j++) {
+            int num = sudoku[startRow + i][startCol + j];
+            if (numbers[num]) return NULL;
+            numbers[num] = true;
+        }
+    }
+    subgrid_valid[subgrid] = true;
+    return NULL;
 }
 
 int main() {
-	pthread_t threads[NUM_THREADS];
-	
-	// Row & column checks
-	int row_numbers[9];
-	
-	for (int i = 0; i < 9; i++) {
-		row_numbers[i] = i;
-		pthread_create(&threads[i], NULL, checkRow, &row_numbers[i]);
-	}
-	
-	int col_numbers[9];
-	
-	for (int i = 0; i < 9; i++) {
-		col_numbers[i] = i;
-		pthread_create(&threads[i + 9], NULL, checkColumn, &col_numbers[i]);
-	}
-	
-	// Creating nine threads for each 3x3 subgrid validation (Subgrid checks)
-	int subgrid_numbers[9];
-	
-	for (int i = 0; i < 9; i++) {
-		subgrid_numbers[i] = i;
-		pthread_create(&threads[i + 18], NULL, checkSubGrid, &subgrid_numbers[i]);
-	}
-	
-	// Waiting for all threads to complete
-	for(int i = 0; i < NUM_THREADS; i++) {
-		pthread_join(threads[i], NULL);
-	}
-	
-	// Add validation logic here to determine if the Sudoku is valid based on the threads' results
-	
-	return 0;
+    pthread_t threads[NUM_THREADS];
+    int indices[9];
+
+    for (int i = 0; i < 9; i++) {
+        indices[i] = i;
+        pthread_create(&threads[i], NULL, checkRow, &indices[i]);
+        pthread_create(&threads[i + 9], NULL, checkColumn, &indices[i]);
+        pthread_create(&threads[i + 18], NULL, checkSubGrid, &indices[i]);
+    }
+
+    for (int i = 0; i < NUM_THREADS; i++) {
+        pthread_join(threads[i], NULL);
+    }
+
+    for (int i = 0; i < 9; i++) {
+        if (!row_valid[i] || !col_valid[i] || !subgrid_valid[i]) {
+            printf("Invalid Sudoku Solution\n");
+            return 0;
+        }
+    }
+
+    printf("Valid Sudoku Solution\n");
+    return 0;
 }
