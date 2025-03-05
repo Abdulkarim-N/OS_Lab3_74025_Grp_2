@@ -65,24 +65,24 @@ int main() {
     pthread_t threads[NUM_THREADS];
     int indices[9];
 
-    for (int i = 0; i < 9; i++) {
+    for (int i = 0; i < 9; i++) { // just combined the creation of the threads to make it neater as each individual loop always went to 9, and just adding 9 to each column and 18 to each subgrid makes it the same (logic taken from the given sample code)
         indices[i] = i;
         pthread_create(&threads[i], NULL, checkRow, &indices[i]);
         pthread_create(&threads[i + 9], NULL, checkColumn, &indices[i]);
         pthread_create(&threads[i + 18], NULL, checkSubGrid, &indices[i]);
     }
 
-    for (int i = 0; i < NUM_THREADS; i++) {
+    for (int i = 0; i < NUM_THREADS; i++) { //waiting for all the threads to complete
         pthread_join(threads[i], NULL);
     }
 
     for (int i = 0; i < 9; i++) {
-        if (!row_valid[i] || !col_valid[i] || !subgrid_valid[i]) {
+        if (!row_valid[i] || !col_valid[i] || !subgrid_valid[i]) { //validation logic, if any one of the rows columns or subgrids are invalid, the entire grid is invalid.
             printf("Invalid Sudoku Solution\n");
             return 0;
         }
     }
 
-    printf("Valid Sudoku Solution\n");
+    printf("Valid Sudoku Solution\n"); //if everything is valid, it will print valid solution and exit the program
     return 0;
 }
